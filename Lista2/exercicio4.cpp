@@ -19,6 +19,12 @@ using namespace std;
 // GLFW
 #include <GLFW/glfw3.h>
 
+// GLM
+#include <glm/glm.hpp> 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+using namespace glm;
 
 // Protótipo da função de callback de teclado
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -33,22 +39,20 @@ const GLuint WIDTH = 800, HEIGHT = 600;
 // Código fonte do Vertex Shader (em GLSL): ainda hardcoded
 const GLchar* vertexShaderSource = "#version 400\n"
 "layout (location = 0) in vec3 position;\n"
-"layout (location = 1) in vec3 color;\n"
-"out vec3 vertexColor;\n"
+"uniform mat4 projection;\n"
 "void main()\n"
 "{\n"
 //...pode ter mais linhas de código aqui!
-"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
-"vertexColor = color;\n"
+"gl_Position = projection * vec4(position.x, position.y, position.z, 1.0);\n"
 "}\0";
 
 //Códifo fonte do Fragment Shader (em GLSL): ainda hardcoded
 const GLchar* fragmentShaderSource = "#version 400\n"
-"in vec3 vertexColor;\n"
+"uniform vec4 inputColor;\n"
 "out vec4 color;\n"
 "void main()\n"
 "{\n"
-"color = vec4(vertexColor,1.0);\n"
+"color = inputColor;\n"
 "}\n\0";
 
 // Função MAIN
@@ -71,7 +75,7 @@ int main()
 //#endif
 
 	// Criação da janela GLFW
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ola Triangulo! -- Rossana", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ola Triangulo! -- Ariel", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	// Fazendo o registro da função de callback para a janela GLFW
@@ -92,7 +96,7 @@ int main()
 	// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
-	glViewport(0, 0, width, height);
+glViewport(width / 2, height / 2, width / 2, height / 2);
 
 
 	// Compilando e buildando o programa de shader
@@ -102,6 +106,16 @@ int main()
 	GLuint VAO = setupGeometry();
 	
 	glUseProgram(shaderID);
+
+	// Enviando a cor desejada (vec4) para o fragment shader
+	// Utilizamos a variáveis do tipo uniform em GLSL para armazenar esse tipo de info
+	// que não está nos buffers
+	GLint colorLoc = glGetUniformLocation(shaderID, "inputColor");
+
+	mat4 projection = ortho(-1.0f,1.0f,-1.0f,1.0f,-1.0f,1.0f);
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderID, "projection"), 1, GL_FALSE, value_ptr(projection));
+
 	
 	// Loop da aplicação - "game loop"
 	while (!glfwWindowShouldClose(window))
@@ -118,19 +132,11 @@ int main()
 
 		glBindVertexArray(VAO); //Conectando ao buffer de geometria
 
+		glUniform4f(colorLoc, 1.0f, 0.0f, 1.0f, 1.0f); //enviando cor para variável uniform inputColor
+
 		// Chamada de desenho - drawcall
 		// Poligono Preenchido - GL_TRIANGLES
-		// Poligono contorno - GL_LINE_LOOP
-		// Poligono vértices - GL_POINTS
-// Desenha a base da casa (usando dois triângulos)
-glDrawArrays(GL_QUADS, 0, 6); // Desenha dois triângulos para formar o quadrado da base
-
-// Desenha o telhado (usando um triângulo)
-glDrawArrays(GL_TRIANGLES, 4, 3); // Desenha o triângulo do telhado
-
-// Desenha a porta (usando dois triângulos)
-glDrawArrays(GL_QUADS, 7, 4); // Desenha dois triângulos para formar o quadrado da porta
-
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 
 		glBindVertexArray(0); //Desconectando o buffer de geometria
 
@@ -212,30 +218,15 @@ int setupGeometry()
 	// sequencial, já visando mandar para o VBO (Vertex Buffer Objects)
 	// Cada atributo do vértice (coordenada, cores, coordenadas de textura, normal, etc)
 	// Pode ser arazenado em um VBO único ou em VBOs separados
-GLfloat vertices[] = {
-    //x   y     z
-    // Base da casa (quadrado)
-    -0.5,  0.0,  0.0,  1.0, 1.0, 0.0,  // v0 - canto inferior esquerdo
-    0.5,  0.0,  0.0,  1.0, 1.0, 0.0,  // v1 - canto inferior direito
-    0.5,  0.5,  0.0,  1.0, 1.0, 0.0,  // v2 - canto superior direito
-    -0.5,  0.5,  0.0,  1.0, 1.0, 0.0,  // v3 - canto superior esquerdo
-
-    // Telhado (triângulo)
-    -0.5,  0.5,  0.0,  1.0, 0.0, 0.0,  // v4 - canto inferior esquerdo do telhado
-    0.5,  0.5,  0.0,  1.0, 0.0, 0.0,  // v5 - canto inferior direito do telhado
-    0.0,  1.0,  0.0,  1.0, 0.0, 0.0,  // v6 - ponto superior do telhado
-
-    // Porta (quadrado dentro da casa)
-    -0.2,  0.0,  0.0,  0.5, 0.25, 0.1,  // v7 - canto inferior esquerdo da porta
-    0.2,  0.0,  0.0,  0.5, 0.25, 0.1,  // v8 - canto inferior direito da porta
-    0.2,  0.3,  0.0,  0.5, 0.25, 0.1,  // v9 - canto superior direito da porta
-    -0.2,  0.3,  0.0,  0.5, 0.25, 0.1   // v10 - canto superior esquerdo da porta
-
-    //janela
-    
-};
-
-
+	GLfloat vertices[] = {
+		//x   y     z
+		//T0
+		-0.5, -0.5, 0.0, //v0
+		 0.5, -0.5, 0.0, //v1
+ 		 0.0,  0.5, 0.0, //v2
+		//T1
+			  
+	};
 
 	GLuint VBO, VAO;
 	//Geração do identificador do VBO
@@ -257,14 +248,8 @@ GLfloat vertices[] = {
 	// Se está normalizado (entre zero e um)
 	// Tamanho em bytes 
 	// Deslocamento a partir do byte zero 
-
-	//Atributo posicao
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
-
-	//Atributo cor
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
 
 	// Observe que isso é permitido, a chamada para glVertexAttribPointer registrou o VBO como o objeto de buffer de vértice 
 	// atualmente vinculado - para que depois possamos desvincular com segurança

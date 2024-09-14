@@ -1,0 +1,2 @@
+Utilizando a câmera 2D do exercício anterior, desenhe algo na tela. O que acontece
+quando posicionamos os objetos? Por que é útil essa configuração? Temos a percepção de que os objetos estão menores, uma vez em que a area de cena é ampliada. 

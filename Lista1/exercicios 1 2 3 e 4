@@ -1,0 +1,12 @@
+GLSL (OpenGL Shading Language) é uma linguagem de programação usada para escrever shaders em OpenGL.
+
+Vertex Shader: Processa os vértices e suas propriedades (posição, cor, etc.).
+Fragment Shader: Processa as cores dos fragmentos e gera a cor final dos pixels.
+Primitivas Gráficas são formas básicas usadas para construir modelos 3D, como pontos, linhas e triângulos.
+
+Armazenamento de Vértices: Usamos Vertex Buffer Objects (VBOs) para armazenar os dados dos vértices na GPU.
+VBO, VAO e EBO:
+
+VBO (Vertex Buffer Object): Armazena os dados dos vértices.
+VAO (Vertex Array Object): Armazena o estado de configuração dos atributos dos vértices e a ligação com os VBOs.
+EBO (Element Buffer Object): Armazena os índices para acessar os vértices do VBO.
